@@ -1,4 +1,11 @@
+
 # Sistema de Gestión Clínica Veterinaria 🚀
+
+# ProyectoFrameworks_VeterinariaFastAPI
+Proyecto para la materia Programación usando Frameworks
+
+# TEMA:  Sistema de Gestión Clínica Veterinaria 🚀
+
 Esta plataforma web permite la administración integral de clínicas veterinarias, optimizando el control de pacientes (mascotas), la gestión de propietarios, el historial clínico, exámenes, recetas y la facturación automatizada. El sistema resuelve la desorganización en el manejo de registros físicos, permitiendo una atención más eficiente y digitalizada.
 
 # 📋 Características
@@ -71,4 +78,8 @@ Abre un Pull Request para revisión.
 # 📄 Licencia
 Este proyecto está bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles.
 
+
 ⌨️ con ❤️ por [Tu Nombre] 😊
+
+⌨️ con ❤️ por [Tu Nombre] 😊
+
