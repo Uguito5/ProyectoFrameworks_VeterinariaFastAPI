@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recetas de {{ mascota.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-recetas { background-color: #198754; color: white; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-outline-secondary">⬅️ Volver al Inicio</a>
+    </div>
+
+    <div class="hero-recetas text-center">
+        <h2>💊 Historial de Recetas: {{ mascota.nombre }}</h2>
+        <p>Control de medicamentos y prescripciones médicas</p>
+        <a href="/mascota/{{ mascota.id }}/recetas/pdf" class="btn btn-light text-success fw-bold mt-2">
+            📥 Descargar Historial Completo en PDF
+        </a>
+    </div>
+
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header bg-success text-white fw-bold">➕ Emitir Nueva Receta</div>
+        <div class="card-body">
+            <form action="/mascota/{{ mascota.id }}/receta_nueva" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Medicamento</label>
+                    <input type="text" name="medicamento" class="form-control" placeholder="Ej: Amoxicilina 500mg" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Indicaciones</label>
+                    <textarea name="indicaciones" class="form-control" rows="3" placeholder="Ej: Administrar 1 tableta cada 12 horas por 7 días..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Guardar Receta</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">Recetas Registradas</div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicamento</th>
+                        <th>Indicaciones</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receta in mascota.recetas %}
+                    <tr>
+                        <td class="fw-bold text-success">{{ receta.medicamento }}</td>
+                        <td>{{ receta.indicaciones }}</td>
+                        <td class="text-center">
+                            <a href="/receta/{{ receta.id }}/pdf" class="btn btn-sm btn-outline-primary">
+                                📄 Descargar
+                            </a>
+                            <button type="button" 
+                                    onclick="eliminarElemento('receta', '{{ receta.id }}')" 
+                                    class="btn btn-sm btn-outline-danger">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            No existen recetas registradas para este paciente.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+    async function eliminarElemento(tipo, id) {
+        if (!confirm(`¿Seguro que deseas eliminar este ${tipo}?`)) return;
+
+        try {
+            // Nota: El 'tipo' debe coincidir con el nombre de tu endpoint (ej: 'factura', 'receta', 'examen')
+            const response = await fetch(`/${tipo}/${id}/eliminar`, { method: 'POST' });
+            if (response.ok) {
+                alert("✅ Eliminado correctamente.");
+                location.reload();
+            } else {
+                alert("❌ Error al eliminar.");
+            }
+        } catch (error) {
+            alert("Error de conexión.");
+        }
+    }
+</script>
+</body>
+</html>

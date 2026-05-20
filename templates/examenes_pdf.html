@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Médico - {{ mascota.nombre }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 15mm;
+        }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.6; }
+        .header { border-bottom: 2px solid #0d6efd; padding-bottom: 10px; margin-bottom: 20px; }
+        .logo-title { font-size: 20pt; font-weight: bold; color: #0d6efd; }
+        .report-title { text-align: center; font-size: 16pt; font-weight: bold; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: #f2f2f2; border: 1px solid #ddd; padding: 10px; text-align: left; }
+        td { border: 1px solid #ddd; padding: 10px; vertical-align: top; }
+        .footer { margin-top: 50px; font-size: 9pt; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo-title">Sistema ERP Veterinario</div>
+        <div style="font-size: 10pt;">Fecha de emisión: {{ current_time }}</div>
+    </div>
+
+    <div class="report-title">Historial de Exámenes Médicos</div>
+
+    <p><strong>Paciente:</strong> {{ mascota.nombre }} ({{ mascota.especie }})</p>
+    <p><strong>Propietario:</strong> {{ mascota.dueno.nombre }} {{ mascota.dueno.apellido }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Fecha</th>
+                <th style="width: 30%;">Tipo de Examen</th>
+                <th style="width: 45%;">Resultado / Informe</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for examen in examenes %}
+            <tr>
+                <td>{{ examen.fecha.strftime('%Y-%m-%d %H:%M') if examen.fecha else 'N/A' }}</td>
+                <td><strong>{{ examen.titulo }}</strong></td>
+                <td>{{ examen.resultado }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center; color: #666;">
+                    No existen registros de exámenes para este paciente.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Documento generado automáticamente por el sistema veterinario.
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Facturación - {{ mascota.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero-facturas { background-color: #198754; color: white; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem; }
+        .table-container { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5 mb-5">
+    <div class="mb-3">
+        <a href="/" class="btn btn-outline-secondary">⬅️ Volver al Panel Principal</a>
+    </div>
+
+    <div class="hero-facturas text-center">
+        <h1>💳 Historial de Facturación</h1>
+        <p>Control de cobros y servicios de la mascota</p>
+        <a href="/mascota/{{ mascota.id }}/facturas/pdf" class="btn btn-light text-success fw-bold mt-2">
+            📥 Descargar Historial Completo en PDF
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-dark">
+                <div class="card-header bg-dark text-white fw-bold">
+                    👤 Datos del Cliente (Dueño)
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Cédula:</strong> {{ mascota.dueno.cedula }}</p>
+                    <p class="mb-2"><strong>Nombre:</strong> {{ mascota.dueno.nombre }} {{ mascota.dueno.apellido }}</p>
+                    <p class="mb-2"><strong>Teléfono:</strong> {{ mascota.dueno.telefono }}</p>
+                    <p class="mb-2"><strong>Correo:</strong> {{ mascota.dueno.correo }}</p>
+                    <hr>
+                    <p class="mb-0 text-muted">
+                        <strong>Paciente:</strong> <span class="text-capitalize">{{ mascota.nombre }}</span> ({{ mascota.especie }})
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mt-4 shadow-sm border-success">
+                <div class="card-header bg-success text-white fw-bold">
+                    ➕ Generar Nueva Factura
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/mascota/{{ mascota.id }}/factura_nueva" class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Servicio / Concepto</label>
+                            <input type="text" name="servicio" class="form-control" placeholder="Ej: Consulta médica, Cirugía, Vacunación" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Monto ($)</label>
+                            <input type="number" step="0.01" name="monto" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-success w-100">Registrar Cobro</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="table-container">
+                <h3 class="mb-4 text-success border-bottom pb-2">Registro de Facturas Emitidas</h3>
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Servicio / Concepto</th>
+                            <th>Monto</th>
+                            <th>Dueño Autorizado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for factura in facturas %}
+                        <tr>
+                            <td>{{ factura.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td><strong class="text-secondary">{{ factura.servicio }}</strong></td>
+                            <td class="fw-bold text-success">${{ "%.2f"|format(factura.monto) }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ factura.mascota.dueno.nombre }} {{ factura.mascota.dueno.apellido }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="/factura/{{ factura.id }}/pdf" class="btn btn-sm btn-outline-primary" title="Descargar">📄</a>
+                                    <button type="button" onclick="enviarFactura('{{ mascota.id }}')" class="btn btn-sm btn-outline-success" title="Enviar">📧</button>
+                                    <button type="button" onclick="eliminarFactura('{{ factura.id }}')" class="btn btn-sm btn-outline-danger" title="Eliminar">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No se registran facturas emitidas para este paciente.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Función para enviar por correo
+    async function enviarFactura(mascotaId) {
+        if (!confirm("¿Deseas enviar el historial de facturas al correo del dueño?")) return;
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerText = "⏳";
+
+        try {
+            const response = await fetch(`/enviar-pdf-correo/${mascotaId}`, { method: 'POST' });
+            const data = await response.json();
+            alert(response.ok ? "✅ " + data.message : "❌ Error: " + (data.detail || "No se pudo enviar"));
+        } catch (error) {
+            alert("Error de conexión.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "📧";
+        }
+    }
+
+    // Nueva función para eliminar
+    async function eliminarFactura(facturaId) {
+        if (!confirm("¿Seguro que deseas ELIMINAR esta factura?")) return;
+
+        try {
+            const response = await fetch(`/factura/${facturaId}/eliminar`, { method: 'POST' });
+            if (response.ok) {
+                alert("✅ Factura eliminada.");
+                location.reload();
+            } else {
+                alert("❌ Error al eliminar.");
+            }
+        } catch (error) {
+            alert("Error de conexión.");
+        }
+    }
+</script>
+</body>
+</html>

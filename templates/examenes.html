@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Exámenes de {{ mascota.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-examenes { background-color: #0d6efd; color: white; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-outline-secondary">⬅️ Volver al Inicio</a>
+    </div>
+
+    <div class="hero-examenes text-center">
+        <h2>🔬 Historial de Exámenes: {{ mascota.nombre }}</h2>
+        <p>Resultados y diagnósticos del paciente</p>
+        <a href="/mascota/{{ mascota.id }}/examenes/pdf" class="btn btn-light text-primary fw-bold mt-2">
+            📥 Descargar Historial Completo en PDF
+        </a>
+    </div>
+
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">➕ Subir Nuevo Reporte de Examen</div>
+        <div class="card-body">
+            <form action="/mascota/{{ mascota.id }}/examen_nuevo" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Examen (Título)</label>
+                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Hemograma completo" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Resultado del Reporte</label>
+                    <textarea name="resultado" class="form-control" rows="3" placeholder="Escriba aquí el informe médico..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Guardar Reporte</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">Reportes Registrados</div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Título</th>
+                        <th>Fecha</th>
+                        <th>Resultado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for examen in mascota.examenes %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ examen.titulo }}</td>
+                        <td>{{ examen.fecha.strftime('%Y-%m-%d') if examen.fecha else 'N/A' }}</td>
+                        <td>{{ examen.resultado }}</td>
+                        <td class="text-center">
+                            <a href="/examen/{{ examen.id }}/pdf" class="btn btn-sm btn-outline-primary">
+                                📄 Descargar
+                            </a>
+                            <button type="button" 
+                                    onclick="eliminarElemento('examen', '{{ examen.id }}')" 
+                                    class="btn btn-sm btn-outline-danger">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            El paciente no registra exámenes previos aún.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+    async function eliminarElemento(tipo, id) {
+        if (!confirm(`¿Seguro que deseas eliminar este ${tipo}?`)) return;
+
+        try {
+            // Nota: El 'tipo' debe coincidir con el nombre de tu endpoint (ej: 'factura', 'receta', 'examen')
+            const response = await fetch(`/${tipo}/${id}/eliminar`, { method: 'POST' });
+            if (response.ok) {
+                alert("✅ Eliminado correctamente.");
+                location.reload();
+            } else {
+                alert("❌ Error al eliminar.");
+            }
+        } catch (error) {
+            alert("Error de conexión.");
+        }
+    }
+</script>
+</body>
+</html>

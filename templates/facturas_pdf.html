@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Facturación - {{ mascota.nombre }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 15mm 15mm 15mm 15mm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333333;
+            line-height: 1.4;
+            font-size: 11pt;
+        }
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #005088;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .logo-title {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #005088;
+        }
+        .subtitle {
+            font-size: 10pt;
+            color: #666666;
+        }
+        .report-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #222222;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .info-table {
+            width: 100%;
+            margin-bottom: 25px;
+            background-color: #f8f9fa;
+            border: 1px solid #eeeeee;
+        }
+        .info-table td {
+            padding: 8px;
+            vertical-align: top;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #005088;
+            width: 25%;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .data-table th {
+            background-color: #005088;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            font-size: 10pt;
+        }
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dddddd;
+            font-size: 10pt;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-box {
+            font-weight: bold;
+            color: #198754;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 8pt;
+            color: #999999;
+            border-top: 1px solid #eeeeee;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <table class="header-table">
+        <tr>
+            <td>
+                <div class="logo-title">🐾 VETERINARIA</div>
+                <div class="subtitle">Sistema de Control Clínico y ERP</div>
+            </td>
+            <td class="text-right" style="vertical-align: bottom;">
+                <div class="subtitle">Fecha de Reporte: {{ current_time if current_time else 'Hoy' }}</div>
+                <div class="subtitle">Guayaquil, Ecuador</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="report-title">Historial Clínico de Facturación</div>
+
+    <table class="info-table">
+        <tr>
+            <td class="info-label">Paciente:</td>
+            <td><strong>{{ mascota.nombre }}</strong> (<span style="text-transform: capitalize;">{{ mascota.especie }}</span> - {{ mascota.raza }})</td>
+            <td class="info-label">Propietario:</td>
+            <td>{{ mascota.dueno.nombre }} {{ mascota.dueno.apellido }}</td>
+        </tr>
+        <tr>
+            <td class="info-label">Edad:</td>
+            <td>{{ mascota.edad }} años</td>
+            <td class="info-label">Identificación:</td>
+            <td><code>{{ mascota.dueno.cedula }}</code></td>
+        </tr>
+        <tr>
+            <td class="info-label">Contacto:</td>
+            <td colspan="3">📞 {{ mascota.dueno.telefono or 'N/A' }} &nbsp;&nbsp;|&nbsp;&nbsp; ✉️ {{ mascota.dueno.correo or 'N/A' }}</td>
+        </tr>
+    </table>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 15%;">Código/ID</th>
+                <th style="width: 25%;">Fecha de Emisión</th>
+                <th style="width: 40%;">Detalle / Concepto</th>
+                <th style="width: 20%; text-align: right;">Total Cobrado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for factura in facturas %}
+            <tr>
+                <td><strong>#FAC-{{ factura.id }}</strong></td>
+                <td>
+                    {% if factura.fecha_emision %}
+                        {{ factura.fecha_emision.strftime('%Y-%m-%d %H:%M') }}
+                    {% elif factura.fecha %}
+                        {{ factura.fecha.strftime('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{ factura.concepto or 'Servicios Veterinarios Integrales' }}</td>
+                <td class="text-right total-box">${{ "%.2f"|format(factura.total) if factura.total else '0.00' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center" style="color: #666666; padding: 20px;">
+                    No se registran transacciones ni facturas emitidas para este paciente.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Documento generado automáticamente por el Sistema ERP Veterinario. Todos los derechos reservados.
+    </div>
+
+</body>
+</html>

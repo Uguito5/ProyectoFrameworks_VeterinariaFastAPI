@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veterinaria - Sistema ERP Clínico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero { background-color: #005088; color: white; padding: 2rem; border-radius: 0.5rem; margin-bottom: 2rem; }
+        .table-container { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .section-title { border-left: 5px solid #198754; padding-left: 10px; margin-bottom: 20px; }
+        .section-title-dueno { border-left: 5px solid #0d6efd; padding-left: 10px; margin-bottom: 20px; }
+        .badge-especie { font-size: 0.85em; padding: 0.4em 0.6em; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5 mb-5">
+    <div class="hero text-center">
+        <h1>🐾 Sistema de Gestión Veterinaria</h1>
+        <p>Control Clínico, Propietarios y Facturación Integrada</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        ⚠️ <strong>{{ error }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if error_dueno %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        ⚠️ <strong>{{ error_dueno }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <ul class="nav nav-tabs mb-4" id="erpTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold text-success" id="mascotas-tab" data-bs-toggle="tab" data-bs-target="#mascotas-pane" type="button" role="tab">🐶 Gestión de Pacientes</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-primary" id="duenos-tab" data-bs-toggle="tab" data-bs-target="#duenos-pane" type="button" role="tab">👤 Gestión de Dueños / Clientes</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="erpTabsContent">
+        
+        <div class="tab-pane fade show active" id="mascotas-pane" role="tabpanel" aria-labelledby="mascotas-tab">
+            
+            <div class="card mb-4 border-success shadow-sm">
+                <div class="card-body">
+                    <h4 class="section-title text-success">Registrar Nuevo Paciente</h4>
+                    <form method="post" action="/registrar/" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nombre Mascota</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Lulu" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Especie</label>
+                            <select name="especie" id="regEspecie" class="form-select" onchange="actualizarRazas(this.value, 'regRaza')" required>
+                                <option value="">Elegir...</option>
+                                <option value="perro">Perro</option>
+                                <option value="gato">Gato</option>
+                                <option value="tortuga">Tortuga</option>
+                                <option value="loro">Loro</option>
+                                <option value="perezoso">Perezoso</option>
+                                <option value="conejo">Conejo</option>
+                                <option value="lagartija">Lagartija</option>
+                                <option value="hamster">Hamster</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Raza</label>
+                            <select name="raza" id="regRaza" class="form-select" required>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Edad (Años)</label>
+                            <input type="number" name="edad" class="form-control" placeholder="0" min="0" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Seleccionar Dueño</label>
+                            <select name="dueno_id" class="form-select" required>
+                                <option value="">-- Seleccione Propietario --</option>
+                                {% for d in duenos %}
+                                <option value="{{ d.id }}">{{ d.nombre }} {{ d.apellido }} (CI: {{ d.cedula }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-success px-5">Guardar Mascota</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4 border-info shadow-sm bg-light">
+                <div class="card-body">
+                    <form method="get" action="/" class="row g-3">
+                        <div class="col-md-3"><input type="text" name="nombre" class="form-control" placeholder="🔍 Filtrar por Paciente"></div>
+                        <div class="col-md-3"><input type="text" name="nombre_dueno" class="form-control" placeholder="👤 Filtrar por Dueño"></div>
+                        <div class="col-md-2"><input type="text" name="especie" class="form-control" placeholder="Especie"></div>
+                        <div class="col-md-2"><input type="text" name="raza" class="form-control" placeholder="Raza"></div>
+                        <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Filtrar Pacientes</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 class="mb-4 text-dark fw-bold">Historial de Pacientes</h3>
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Especie</th>
+                            <th>Raza</th>
+                            <th>Edad</th>
+                            <th>Dueño Responsable</th>
+                            <th class="text-center">Módulos Fichas</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mascota in mascotas %}
+                        <tr>
+                            <td><strong class="text-dark">{{ mascota.nombre }}</strong></td>
+                            <td><span class="badge bg-secondary text-capitalize badge-especie">{{ mascota.especie }}</span></td>
+                            <td class="text-capitalize">{{ mascota.raza }}</td>
+                            <td>{{ mascota.edad }} años</td>
+                            <td><span class="text-primary fw-bold">{{ mascota.dueno.nombre }} {{ mascota.dueno.apellido }}</span></td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/mascota/{{ mascota.id }}/examenes" class="btn btn-info text-white fw-semibold">🔬 Exámenes</a>
+                                    <a href="/mascota/{{ mascota.id }}/recetas" class="btn btn-warning text-white fw-semibold">💊 Recetas</a>
+                                    <a href="/mascota/{{ mascota.id }}/facturas" class="btn btn-success text-white fw-semibold">💳 Facturas</a>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary btn-editar-mascota" title="Editar Mascota"
+                                            data-id="{{ mascota.id }}"
+                                            data-nombre="{{ mascota.nombre }}"
+                                            data-especie="{{ mascota.especie }}"
+                                            data-raza="{{ mascota.raza }}"
+                                            data-edad="{{ mascota.edad }}"
+                                            data-dueno="{{ mascota.dueno_id }}"
+                                            data-observaciones="{{ mascota.observaciones or '' }}">
+                                        ✏️
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" title="Eliminar Mascota" 
+                                            onclick="eliminarMascota('{{ mascota.id }}', '{{ mascota.nombre }}')">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No hay mascotas registradas en este momento.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="duenos-pane" role="tabpanel" aria-labelledby="duenos-tab">
+            
+            <div class="card mb-4 border-primary shadow-sm">
+                <div class="card-body">
+                    <h4 class="section-title-dueno text-primary">Registrar Nuevo Dueño (Cliente)</h4>
+                    <form method="post" action="/registrar_dueno/" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Cédula / Identificación</label>
+                            <input type="text" name="cedula" class="form-control" placeholder="Ej: 0999999999" 
+                                   pattern="[0-9]{10}" maxlength="10" minlength="10" inputmode="numeric" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nombres</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Juan" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Apellidos</label>
+                            <input type="text" name="apellido" class="form-control" placeholder="Ej: Pérez" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Teléfono / Celular</label>
+                            <input type="text" name="telefono" class="form-control" placeholder="Ej: 0987654321" 
+                                   pattern="[0-9]{10}" maxlength="10" inputmode="numeric" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Correo Electrónico</label>
+                            <input type="email" name="correo" class="form-control" placeholder="nombre@correo.com" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Dirección Domiciliaria</label>
+                            <input type="text" name="direccion" class="form-control" placeholder="Ej: Vía a la Costa, Guayaquil">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-primary px-5">Guardar Dueño</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4 border-primary shadow-sm bg-light">
+                <div class="card-body">
+                    <form method="get" action="/" class="row g-3">
+                        <input type="hidden" name="tab" value="duenos">
+                        <div class="col-md-5">
+                            <input type="text" name="filtrar_cedula" class="form-control" placeholder="🔍 Filtrar por Cédula / Identificación">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="filtrar_apellido" class="form-control" placeholder="👤 Filtrar por Apellido del Cliente">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Filtrar Clientes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 class="mb-4 text-primary fw-bold">Base de Datos de Clientes</h3>
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Cédula</th>
+                            <th>Cliente / Propietario</th>
+                            <th>Contacto</th>
+                            <th>Dirección</th>
+                            <th>Mascotas Asociadas</th>
+                            <th class="text-center">Historial Clínico/Pagos</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in duenos %}
+                        <tr>
+                            <td><code>{{ d.cedula }}</code></td>
+                            <td><strong class="text-dark">{{ d.nombre }} {{ d.apellido }}</strong></td>
+                            <td>
+                                <div class="small">📞 {{ d.telefono or 'N/A' }}</div>
+                                <div class="small text-muted">✉️ {{ d.correo or 'N/A' }}</div>
+                            </td>
+                            <td><small>{{ d.direccion or 'No registrada' }}</small></td>
+                            <td>
+                                {% for m in d.mascotas %}
+                                <span class="badge bg-success text-capitalize mb-1">{{ m.nombre }} ({{ m.especie }})</span>
+                                {% else %}
+                                <span class="text-muted small">Sin mascotas asignadas</span>
+                                {% endfor %}
+                            </td>
+                            <td class="text-center">
+                                {% if d.mascotas %}
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        📁 Ver Historial de...
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for m in d.mascotas %}
+                                        <li><a class="dropdown-item fw-medium" href="/mascota/{{ m.id }}/facturas">💳 Facturas {{ m.nombre }}</a></li>
+                                        <li><a class="dropdown-item fw-medium" href="/mascota/{{ m.id }}/examenes">🔬 Ficha Médica {{ m.nombre }}</a></li>
+                                        {% if not loop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-secondary" disabled>Sin Historial</button>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary btn-editar-dueno" title="Editar Cliente"
+                                            data-id="{{ d.id }}"
+                                            data-cedula="{{ d.cedula }}"
+                                            data-nombre="{{ d.nombre }}"
+                                            data-apellido="{{ d.apellido }}"
+                                            data-telefono="{{ d.telefono or '' }}"
+                                            data-correo="{{ d.correo or '' }}"
+                                            data-direccion="{{ d.direccion or '' }}">
+                                        ✏️
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" title="Eliminar Propietario" 
+                                            onclick="eliminarDueno('{{ d.id }}', '{{ d.nombre }} {{ d.apellido }}')">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No hay clientes registrados en el sistema.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarMascota" tabindex="-1" aria-labelledby="modalEditarMascotaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalEditarMascotaLabel">✏️ Editar Datos del Paciente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarMascota" onsubmit="enviarFormularioEditar(event)">
+                <div class="modal-body row g-3">
+                    <input type="hidden" id="edit_id">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Nombre de la Mascota</label>
+                        <input type="text" id="edit_nombre" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Especie</label>
+                        <select id="edit_especie" name="especie" class="form-select" onchange="actualizarRazas(this.value, 'edit_raza')" required>
+                            <option value="perro">Perro</option>
+                            <option value="gato">Gato</option>
+                            <option value="tortuga">Tortuga</option>
+                            <option value="loro">Loro</option>
+                            <option value="perezoso">Perezoso</option>
+                            <option value="conejo">Conejo</option>
+                            <option value="lagartija">Lagartija</option>
+                            <option value="hamster">Hamster</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Raza</label>
+                        <select id="edit_raza" name="raza" class="form-select" required></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Edad (Años)</label>
+                        <input type="number" id="edit_edad" name="edad" class="form-control" required>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Dueño Responsable</label>
+                        <select id="edit_dueno_id" name="dueno_id" class="form-select" required>
+                            {% for d in duenos %}
+                            <option value="{{ d.id }}">{{ d.nombre }} {{ d.apellido }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Observaciones Clínicas</label>
+                        <textarea id="edit_observaciones" name="observaciones" class="form-control" rows="2" placeholder="Historial médico previo, alergias..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarDueno" tabindex="-1" aria-labelledby="modalEditarDuenoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalEditarDuenoLabel">✏️ Editar Datos del Cliente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarDueno" onsubmit="enviarFormularioEditarDueno(event)">
+                <div class="modal-body row g-3">
+                    <input type="hidden" id="edit_d_id">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Cédula / Identificación</label>
+                        <input type="text" id="edit_d_cedula" name="cedula" class="form-control" 
+                               pattern="[0-9]{10}" maxlength="10" minlength="10" inputmode="numeric" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Teléfono</label>
+                        <input type="text" id="edit_d_telefono" name="telefono" class="form-control" 
+                               pattern="[0-9]+" inputmode="numeric" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nombres</label>
+                        <input type="text" id="edit_d_nombre" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Apellidos</label>
+                        <input type="text" id="edit_d_apellido" name="apellido" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Correo Electrónico</label>
+                        <input type="email" id="edit_d_correo" name="correo" class="form-control">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Dirección Domiciliaria</label>
+                        <input type="text" id="edit_d_direccion" name="direccion" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const razasData = {
+    "perro": ["Labrador", "Poodle", "Pastor Alemán", "Golden Retriever", "Bulldog", "Chihuahua", "Husky", "Pug", "Beagle", "Otro"],
+    "gato": ["Siamés", "Persa", "Maine Coon", "Angora", "Ragdoll", "Bengalí", "Esfinge", "Otro"],
+    "tortuga": ["De Tierra", "De Agua", "Galápagos", "Pintada", "Otro"],
+    "loro": ["Guacamayo", "Amazonas", "Cacatúa", "Perico", "Agapornis", "Otro"],
+    "perezoso": ["De dos dedos", "De tres dedos", "Otro"],
+    "conejo": ["Enano", "Cabeza de León", "California", "Angora", "Rex", "Otro"],
+    "lagartija": ["Geco", "Iguana", "Camaleón", "Dragón Barbudo", "Monitor", "Otro"],
+    "hamster": ["Sirio", "Enano Ruso", "Roborovski", "Chino", "Otro"],
+    "otro": ["Otro"]
+};
+
+function actualizarRazas(especie, targetId, valorPreseleccionado = "otro") {
+    const selectRaza = document.getElementById(targetId);
+    if (!selectRaza) return;
+    selectRaza.innerHTML = "";
+    const razas = razasData[especie] || ["Otro"];
+    
+    razas.forEach(raza => {
+        const opt = document.createElement("option");
+        opt.value = raza.toLowerCase();
+        opt.textContent = raza;
+        if(opt.value === valorPreseleccionado.toLowerCase() || raza.toLowerCase() === valorPreseleccionado.toLowerCase()) {
+            opt.selected = true;
+        }
+        selectRaza.appendChild(opt);
+    });
+}
+
+let modalEditarBS;
+let modalEditarDuenoBS;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const regEspecieElement = document.getElementById("regEspecie");
+    if (regEspecieElement) { actualizarRazas(regEspecieElement.value, "regRaza"); }
+    modalEditarBS = new bootstrap.Modal(document.getElementById('modalEditarMascota'));
+    modalEditarDuenoBS = new bootstrap.Modal(document.getElementById('modalEditarDueno'));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'duenos' || urlParams.has('filtrar_cedula') || urlParams.has('filtrar_apellido')) {
+        const duenosTab = document.getElementById('duenos-tab');
+        if (duenosTab) { bootstrap.Tab.getOrCreateInstance(duenosTab).show(); }
+    }
+});
+
+document.addEventListener("click", (e) => {
+    const botonMascota = e.target.closest(".btn-editar-mascota");
+    if (botonMascota) {
+        const id = botonMascota.getAttribute("data-id");
+        const nombre = botonMascota.getAttribute("data-nombre");
+        const especie = botonMascota.getAttribute("data-especie");
+        const raza = botonMascota.getAttribute("data-raza");
+        const edad = botonMascota.getAttribute("data-edad");
+        const duenoId = botonMascota.getAttribute("data-dueno");
+        const observaciones = botonMascota.getAttribute("data-observaciones");
+
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_nombre').value = nombre;
+        document.getElementById('edit_especie').value = especie;
+        
+        actualizarRazas(especie, 'edit_raza', raza);
+        
+        document.getElementById('edit_edad').value = edad;
+        document.getElementById('edit_dueno_id').value = duenoId;
+        document.getElementById('edit_observaciones').value = observaciones;
+        
+        modalEditarBS.show();
+    }
+
+    const botonDueno = e.target.closest(".btn-editar-dueno");
+    if (botonDueno) {
+        const id = botonDueno.getAttribute("data-id");
+        const cedula = botonDueno.getAttribute("data-cedula");
+        const nombre = botonDueno.getAttribute("data-nombre");
+        const apellido = botonDueno.getAttribute("data-apellido");
+        const telefono = botonDueno.getAttribute("data-telefono");
+        const correo = botonDueno.getAttribute("data-correo");
+        const direccion = botonDueno.getAttribute("data-direccion");
+
+        document.getElementById('edit_d_id').value = id;
+        document.getElementById('edit_d_cedula').value = cedula;
+        document.getElementById('edit_d_nombre').value = nombre;
+        document.getElementById('edit_d_apellido').value = apellido;
+        document.getElementById('edit_d_telefono').value = telefono;
+        document.getElementById('edit_d_correo').value = correo;
+        document.getElementById('edit_d_direccion').value = direccion;
+        
+        modalEditarDuenoBS.show();
+    }
+});
+
+function enviarFormularioEditar(event) {
+    event.preventDefault();
+    const id = document.getElementById('edit_id').value;
+    
+    const formData = new URLSearchParams();
+    formData.append('nombre', document.getElementById('edit_nombre').value);
+    formData.append('especie', document.getElementById('edit_especie').value);
+    formData.append('raza', document.getElementById('edit_raza').value);
+    formData.append('edad', document.getElementById('edit_edad').value);
+    formData.append('dueno_id', document.getElementById('edit_dueno_id').value);
+    formData.append('observaciones', document.getElementById('edit_observaciones').value);
+
+    fetch(`/mascota/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            modalEditarBS.hide();
+            window.location.reload();
+        } else {
+            alert("Error al actualizar los datos del paciente.");
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function eliminarMascota(id, nombre) {
+    if (confirm(`¿Está seguro de que desea eliminar permanentemente al paciente "${nombre}"?
+Esta acción borrará también sus recetas, exámenes e historial de facturas.`)) {
+        fetch(`/mascota/${id}`, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => { window.location.reload(); })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+function enviarFormularioEditarDueno(event) {
+    event.preventDefault();
+    const id = document.getElementById('edit_d_id').value;
+    
+    const formData = new URLSearchParams();
+    formData.append('cedula', document.getElementById('edit_d_cedula').value);
+    formData.append('nombre', document.getElementById('edit_d_nombre').value);
+    formData.append('apellido', document.getElementById('edit_d_apellido').value);
+    formData.append('telefono', document.getElementById('edit_d_telefono').value);
+    formData.append('correo', document.getElementById('edit_d_correo').value);
+    formData.append('direccion', document.getElementById('edit_d_direccion').value);
+
+    fetch(`/dueno/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            modalEditarDuenoBS.hide();
+            window.location.reload();
+        } else {
+            return response.json().then(data => {
+                alert(data.detail || "Error al actualizar los datos del cliente.");
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Ocurrió un error de red o el servidor no responde.");
+    });
+}
+
+function eliminarDueno(id, nombre) {
+    if (confirm(`¿Está seguro de que desea eliminar al cliente "${nombre}"?
+⚠️ ¡ATENCIÓN!: Solo podrá eliminarlo si este propietario ya no tiene ninguna mascota vinculada.`)) {
+        fetch(`/dueno/${id}`, { method: 'DELETE' })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("No se pudo eliminar el cliente. Verifique que no tenga pacientes activos a su cargo.");
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+</script>
+</body>
+</html>
